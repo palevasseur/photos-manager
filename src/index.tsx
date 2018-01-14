@@ -3,7 +3,7 @@ import * as ReactDOM from 'react-dom';
 import App from './App';
 import registerServiceWorker from './registerServiceWorker';
 import './index.css';
-import { initFirebase } from './firebase.js';
+import { initFirebase } from './firebase';
 
 initFirebase();
 

@@ -1,4 +1,5 @@
 import * as firebase from 'firebase';
+const log = console.log; // to allow console log with tslint
 
 export function initFirebase() {
   let config = {
@@ -13,27 +14,25 @@ export function initFirebase() {
   firebase.initializeApp(config);
 
   let auth = firebase.auth();
-  auth.onAuthStateChanged(function (state) {
-    if(state) {
-      console.log('logged', state);
-      writeStorage('test.json', 'test ok');
-    }
-    else {
-      console.log('logging...');
+  auth.onAuthStateChanged((state: firebase.User) => {
+    if (state) {
+      log('logged', state);
+      writeStorage('test.json', 'test ok'); // todo: remove test
+    } else {
+      log('logging...');
       auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
     }
   });
 }
 
-export function writeStorage(fileName, data) {
+export function writeStorage(fileName: string, data: string) {
   let storageRef = firebase.storage().ref();
   let testRef = storageRef.child(fileName);
-  testRef.putString(data).then(function(snapshot) {
+  testRef.putString(data).then((snapshot: firebase.storage.UploadTaskSnapshot) => {
     if (snapshot.state === 'success') {
-      console.log('Created new backup ' + fileName);
-    }
-    else {
-      console.log('Failed to create file !');
+      log('Created new backup ' + fileName);
+    } else {
+      log('Failed to create file !');
     }
   });
 }
