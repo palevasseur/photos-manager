@@ -30,7 +30,7 @@ export function writeStorage(fileName: string, data: string) {
   let testRef = storageRef.child(fileName);
   testRef.putString(data).then((snapshot: firebase.storage.UploadTaskSnapshot) => {
     if (snapshot.state === 'success') {
-      log('Created new backup ' + fileName);
+      log('Created new file ' + fileName);
     } else {
       log('Failed to create file !');
     }
