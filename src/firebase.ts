@@ -1,5 +1,4 @@
 import * as firebase from 'firebase';
-const log = console.log; // to allow console log with tslint
 
 export function initFirebase() {
   let config = {
@@ -16,10 +15,10 @@ export function initFirebase() {
   let auth = firebase.auth();
   auth.onAuthStateChanged((state: firebase.User) => {
     if (state) {
-      log('logged', state);
+      console.log('logged', state);
       writeStorage('test.json', 'test ok'); // todo: remove test
     } else {
-      log('logging...');
+      console.log('logging...');
       auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
     }
   });
@@ -30,9 +29,9 @@ export function writeStorage(fileName: string, data: string) {
   let testRef = storageRef.child(fileName);
   testRef.putString(data).then((snapshot: firebase.storage.UploadTaskSnapshot) => {
     if (snapshot.state === 'success') {
-      log('Created new file ' + fileName);
+      console.log('Created new file ' + fileName);
     } else {
-      log('Failed to create file !');
+      console.log('Failed to create file !');
     }
   });
 }

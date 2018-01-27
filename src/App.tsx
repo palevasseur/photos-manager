@@ -1,6 +1,7 @@
 import * as React from 'react';
 import './App.css';
 import { driveSignin, driveSignout, listFiles } from './driveapi';
+import { Jimp } from './jimp';
 
 const IMAGE_URL = 'https://drive.google.com/uc?export=view&id=';
 
@@ -14,6 +15,7 @@ class App extends React.Component {
 
     this.listFiles = this.listFiles.bind(this);
   }
+
   render() {
     return (
       <div className="App">
@@ -21,6 +23,8 @@ class App extends React.Component {
         <br/>
         <button onClick={this.signIn}>SignIn</button>
         <button onClick={this.signOut}>SignOut</button>
+        <br/>
+        <button onClick={this.testJimp}>Test Jimp</button>
         <br/>
         <button onClick={this.listFiles}>Get List</button>
         <span>{this.createList()}</span>
@@ -53,6 +57,21 @@ class App extends React.Component {
         <img src={this.url(img)} height="200px"/>
       </div>
     ));
+  }
+
+  private testJimp() {
+    Jimp.read('./images/lenna.png').then(lenna => {
+      lenna.resize(256, 256)            // resize
+        .quality(60)                 // set JPEG quality
+        .greyscale()                 // set greyscale
+        .getBase64(Jimp.MIME_JPEG, function (err, src) {
+          var img = document.createElement('img');
+          img.setAttribute('src', src);
+          document.body.appendChild(img);
+        });
+    }).catch(function (err) {
+      console.log(err);
+    });
   }
 }
 
