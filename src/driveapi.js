@@ -8,7 +8,8 @@ const DISCOVERY_DOCS = ['https://www.googleapis.com/discovery/v1/apis/drive/v3/r
 
 // Authorization scopes required by the API; multiple scopes can be
 // included, separated by spaces.
-const SCOPES = 'https://www.googleapis.com/auth/drive.metadata.readonly';
+// https://developers.google.com/drive/v3/web/about-auth
+const SCOPES = 'https://www.googleapis.com/auth/drive.readonly';
 
 export function initGoogleDrive() {
   gapi.load('client:auth2', initClient);
@@ -57,4 +58,22 @@ export function listFiles() {
 
     return response.result.files;
   });
+}
+
+export function getFile(fileId) {
+  //var dest = fs.createWriteStream('/tmp/photo.jpg');
+  return gapi.client.drive.files.get({
+    fileId: fileId,
+    alt: 'media'
+  }).then(function(res) {
+    console.log('Done', res);
+    return res.body;
+  })
+/*    .on('end', function () {
+      console.log('Done');
+    })
+    .on('error', function (err) {
+      console.log('Error during download', err);
+    })
+    .pipe(dest);*/
 }
