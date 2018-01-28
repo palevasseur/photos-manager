@@ -42,16 +42,18 @@ export function driveSignout() {
   gapi.auth2.getAuthInstance().signOut();
 }
 
-export function listFiles() {
+// https://developers.google.com/drive/v3/reference/files?hl=fr
+// "photos" folder = 16k3rwshhD23C4pWkYJa3OMCO2uBeUu09
+export function listJPG(folderId = '16k3rwshhD23C4pWkYJa3OMCO2uBeUu09') {
   return gapi.client.drive.files.list({
-    q: "mimeType='image/jpeg'",
-    fields: 'nextPageToken, files(id, name, webViewLink)'
+    q: "mimeType='image/jpeg' and '" + folderId + "' in parents",
+    fields: 'files(id, name, size, webViewLink)'
   }).then(function(response) {
     console.log('Files:');
-    var files = response.result.files;
+    let files = response.result.files;
     if (files && files.length > 0) {
-      for (var i = 0; i < files.length; i++) {
-        var file = files[i];
+      for (let i = 0; i < files.length; i++) {
+        let file = files[i];
         console.log(file.name + ' (' + file.id + ') - ' + file.webViewLink);
       }
     }
