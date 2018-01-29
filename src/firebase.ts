@@ -15,16 +15,16 @@ export function initFirebase() {
   let auth = firebase.auth();
   auth.onAuthStateChanged((state: firebase.User) => {
     if (state) {
-      console.log('logged', state);
-      //writeString('test.json', 'test ok'); // todo: remove test
+      console.log('FireBase logged', state);
     } else {
-      console.log('logging...');
+      console.log('FireBase logging...');
       auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
     }
   });
 }
 
-export function writeString(fileName: string, data: string) {
+//writeString('test.json', 'test ok');
+/*export function writeString(fileName: string, data: string) {
   let storageRef = firebase.storage().ref();
   let testRef = storageRef.child(fileName);
   testRef.putString(data).then((snapshot: firebase.storage.UploadTaskSnapshot) => {
@@ -34,7 +34,7 @@ export function writeString(fileName: string, data: string) {
       console.log('Failed to create file !');
     }
   });
-}
+}*/
 
 export function writeData(fileName: string, data: any) {
   let storageRef = firebase.storage().ref();
@@ -43,7 +43,7 @@ export function writeData(fileName: string, data: any) {
     if (snapshot.state === 'success') {
       console.log('Created new file ' + fileName);
     } else {
-      console.log('Failed to create file !');
+      console.log('Failed to create file ' + fileName);
     }
   });
 }
