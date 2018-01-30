@@ -42,8 +42,7 @@ export function driveSignout() {
 }
 
 // https://developers.google.com/drive/v3/reference/files?hl=fr
-// "photos" folder = 16k3rwshhD23C4pWkYJa3OMCO2uBeUu09
-export function getImagesList(folderId = '16k3rwshhD23C4pWkYJa3OMCO2uBeUu09') {
+export function getImagesList(folderId) {
   return gapi.client.drive.files.list({
     q: "mimeType='image/jpeg' and '" + folderId + "' in parents",
     fields: 'files(id, name, size, webViewLink)'

@@ -36,14 +36,16 @@ export function initFirebase() {
   });
 }*/
 
-export function writeData(fileName: string, data: any) {
+export function writeData(fileName: string, data: any) : Promise<boolean> {
   let storageRef = firebase.storage().ref();
   let testRef = storageRef.child(fileName);
-  testRef.put(data).then((snapshot: firebase.storage.UploadTaskSnapshot) => {
+  return testRef.put(data).then((snapshot: firebase.storage.UploadTaskSnapshot) => {
     if (snapshot.state === 'success') {
       console.log('Created new file ' + fileName);
+      return true;
     } else {
       console.log('Failed to create file ' + fileName);
+      return false;
     }
   });
 }

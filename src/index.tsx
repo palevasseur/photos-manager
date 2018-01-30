@@ -6,11 +6,11 @@ import './index.css';
 import { initFirebase } from './firebase';
 import { initGoogleDrive } from './driveapi';
 
-initFirebase();
-initGoogleDrive();
-
 ReactDOM.render(
   <App />,
   document.getElementById('root') as HTMLElement
 );
+
+initFirebase();
+initGoogleDrive();
 registerServiceWorker();
