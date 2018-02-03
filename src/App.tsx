@@ -1,32 +1,36 @@
 import * as React from 'react';
-import './App.css';
-import {getImagesList, getImage} from './driveapi';
 import {Jimp} from './jimp';
-import {getData, MetadataImage, writeData} from './firebase';
+import './App.css';
+import {getImagesList as GDrive_getImagesList, getImage as GDrive_getImage} from './driveapi';
+import {getImages as FireBase_getImages, Image as FireBase_Image, writeImage as FireBase_writeImage} from './firebase';
 //const lennaUrl = require('./images/oeuf.jpg'); // this.createThumbnail(lennaUrl).then(image => image.getBase64(Jimp.MIME_JPEG, (err, src) => displayImage(src)));
 //const IMAGE_URL = 'https://drive.google.com/uc?export=view&id='; // <img src={IMAGE_URL + img.id} height="200px"/>
 
 const GDRIVE_PHOTOS_FOLDER_ID = '16k3rwshhD23C4pWkYJa3OMCO2uBeUu09';
-const CLOUD_DEST_THUMBS_FOLDER = 'thumbs/';
+const FIREBASE_THUMBS_FOLDER = 'thumbs/';
 
-type Image = {
+type GDriveImage = {
   name: string;
   id: string;
   size?: number;
   webViewLink?: string;
-  state: 'loading' | 'creating thumb' | 'thumb saved' | 'error'
+  state: 'loading' | 'creating thumb' | 'thumb saved' | 'error';
 };
 
-type AppState = {
-  imagesList: Image[],
-  thumbsList: MetadataImage[]
+type JimpImage = {
+  bitmap: {
+    width: number;
+    height: number;
+    data: Uint8Array;
+  },
+  getBuffer: (mime: any, cb: any) => void;
 };
 
 // ImageList component
-class ImagesList extends React.Component<{imagesList: Image[]}> {
+class ImagesList extends React.Component<{imagesList: GDriveImage[]}> {
   render() {
     let key = 0;
-    return this.props.imagesList.map((img: Image) => (
+    return this.props.imagesList.map((img: GDriveImage) => (
       <div key={key++}>
         {img.name + ' (' + img.size + ')' + ': ' + img.state}
       </div>
@@ -35,14 +39,19 @@ class ImagesList extends React.Component<{imagesList: Image[]}> {
 }
 
 // ThumbList component
-class ThumbsList extends React.Component<{thumbsList: MetadataImage[]}> {
+class ThumbsList extends React.Component<{thumbsList: FireBase_Image[]}> {
   render() {
     let key = 0;
-    return this.props.thumbsList.map((thumb: MetadataImage) => {
-      return <img key={key++} src={thumb.thumbUrl} />;
+    return this.props.thumbsList.map((thumb: FireBase_Image) => {
+      return <img key={key++} src={thumb.thumb.url} />;
     });
   }
 }
+
+type AppState = {
+  imagesList: GDriveImage[],
+  thumbsList: FireBase_Image[]
+};
 
 class App extends React.Component {
   state: AppState = {
@@ -74,7 +83,7 @@ class App extends React.Component {
   }
 
   private displayThumbs() {
-    getData(CLOUD_DEST_THUMBS_FOLDER).then( (imgs: MetadataImage[]) => {
+    FireBase_getImages(FIREBASE_THUMBS_FOLDER).then( (imgs: FireBase_Image[]) => {
       const newList = {
         thumbsList: imgs
       };
@@ -90,9 +99,9 @@ class App extends React.Component {
     return this.state.imagesList.reduce((acc, cur) => (acc ? (cur.state === 'thumb saved' || cur.state === 'error') : false), true);
   }
 
-  private setImageState(img: Image, state: Image['state']) {
+  private setImageState(img: GDriveImage, state: GDriveImage['state']) {
     let newList = JSON.parse(JSON.stringify(this.state.imagesList));
-    newList.some((i: Image) => {
+    newList.some((i: GDriveImage) => {
       if(i.id === img.id) {
         i.state = state;
         return true;
@@ -105,15 +114,15 @@ class App extends React.Component {
   }
 
   private createThumbs() {
-    getImagesList(GDRIVE_PHOTOS_FOLDER_ID).then(list => {
+    GDrive_getImagesList(GDRIVE_PHOTOS_FOLDER_ID).then(list => {
       this.setState({imagesList: list});
 
-      list.forEach((img:Image) => {
+      list.forEach((img:GDriveImage) => {
         this.setImageState(img, 'loading');
-        getImage(img.id)
+        GDrive_getImage(img.id)
           .then(abufData => {
             this.setImageState(img, 'creating thumb');
-            this.createThumbnail(abufData).then(image => {
+            this.createThumbnail(abufData).then((image: JimpImage) => {
               // display thumb
               //image.getBase64(Jimp.MIME_JPEG, (err, src) => displayImage(src));
 
@@ -122,7 +131,7 @@ class App extends React.Component {
                 if(err) {
                   this.setImageState(img, 'error');
                 } else {
-                  writeData(CLOUD_DEST_THUMBS_FOLDER, img.name, src)
+                  FireBase_writeImage(FIREBASE_THUMBS_FOLDER, img.name, src)
                     .then(st => (this.setImageState(img, st ? 'thumb saved' : 'error')));
                 }
               });
@@ -136,10 +145,10 @@ class App extends React.Component {
   // return Jimp image
   private createThumbnail(data): Promise<any> {
     return new Promise(resolve => {
-      Jimp.read(data).then(lenna => {
+      Jimp.read(data).then(img => {
         const width = 100;
-        const height = width*lenna.bitmap.height/lenna.bitmap.width;
-        resolve(lenna.resize(width, height).quality(60));
+        const height = width*img.bitmap.height/img.bitmap.width;
+        resolve(img.resize(width, height).quality(60));
       }).catch(function (err) {
         console.log(err);
       });

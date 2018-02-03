@@ -9,9 +9,14 @@ const config = {
   messagingSenderId: '936745005701'
 };
 
-export type MetadataImage = {
+export type Image = {
   fileName: string;
-  thumbUrl: string;
+  thumb: {
+    url: string;
+  };
+  blur?: {
+    data: any;
+  }
 };
 
 // todo: return Promise to provide error management: initFirebase().then(...).catch(...)
@@ -42,15 +47,17 @@ export function initFirebase() {
   });
 }*/
 
-export function writeData(folder: string, fileName: string, data: any) : Promise<boolean> {
+export function writeImage(folder: string, fileName: string, data: any) : Promise<boolean> {
   const storageRef = firebase.storage().ref();
   const testRef = storageRef.child(folder + fileName);
   return testRef.put(data).then((snapshot: firebase.storage.UploadTaskSnapshot) => {
     if (snapshot.state === 'success') {
       const dbRef = firebase.database().ref().child(folder + fileName.replace('.', '_'));
-      const dbData : MetadataImage = {
+      const dbData : Image = {
         fileName: fileName,
-        thumbUrl: snapshot.metadata.downloadURLs[0]
+        thumb: {
+          url: snapshot.metadata.downloadURLs[0]
+        }
       };
       return dbRef.set(dbData).then( () => {
         console.log('Created new file ' + folder + fileName);
@@ -73,7 +80,7 @@ export function writeData(folder: string, fileName: string, data: any) : Promise
 
  */
 
-export function getData(folderName: string) : Promise<MetadataImage[]> {
+export function getImages(folderName: string) : Promise<Image[]> {
   const dbRef = firebase.database().ref().child(folderName);
   return dbRef.once('value').then(function(snapshot) {
     const imgs = snapshot.val();
