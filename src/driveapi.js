@@ -10,6 +10,7 @@ const DISCOVERY_DOCS = ['https://www.googleapis.com/discovery/v1/apis/drive/v3/r
 // https://developers.google.com/drive/v3/web/about-auth
 const SCOPES = 'https://www.googleapis.com/auth/drive.readonly';
 
+// todo: return Promise to provide error management: initGoogleDrive().then(...).catch(...)
 export function initGoogleDrive() {
   gapi.load('client:auth2', function() {
     gapi.client.init({

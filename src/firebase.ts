@@ -1,15 +1,21 @@
 import * as firebase from 'firebase';
 
-export function initFirebase() {
-  let config = {
-    apiKey: 'AIzaSyAeu_M2dYt369XsBOUN_3nBx_A0fe2cGjo',
-    authDomain: 'photos-manager-c0a7f.firebaseapp.com',
-    databaseURL: 'https://photos-manager-c0a7f.firebaseio.com',
-    projectId: 'photos-manager-c0a7f',
-    storageBucket: 'photos-manager-c0a7f.appspot.com',
-    messagingSenderId: '936745005701'
-  };
+const config = {
+  apiKey: 'AIzaSyAeu_M2dYt369XsBOUN_3nBx_A0fe2cGjo',
+  authDomain: 'photos-manager-c0a7f.firebaseapp.com',
+  databaseURL: 'https://photos-manager-c0a7f.firebaseio.com',
+  projectId: 'photos-manager-c0a7f',
+  storageBucket: 'photos-manager-c0a7f.appspot.com',
+  messagingSenderId: '936745005701'
+};
 
+export type MetadataImage = {
+  fileName: string;
+  thumbUrl: string;
+};
+
+// todo: return Promise to provide error management: initFirebase().then(...).catch(...)
+export function initFirebase() {
   firebase.initializeApp(config);
 
   let auth = firebase.auth();
@@ -37,12 +43,16 @@ export function initFirebase() {
 }*/
 
 export function writeData(folder: string, fileName: string, data: any) : Promise<boolean> {
-  let storageRef = firebase.storage().ref();
-  let testRef = storageRef.child(folder + fileName);
+  const storageRef = firebase.storage().ref();
+  const testRef = storageRef.child(folder + fileName);
   return testRef.put(data).then((snapshot: firebase.storage.UploadTaskSnapshot) => {
     if (snapshot.state === 'success') {
-      let dbRef = firebase.database().ref().child(folder + fileName.replace('.', '_'));
-      return dbRef.set({fileName: fileName}).then( () => {
+      const dbRef = firebase.database().ref().child(folder + fileName.replace('.', '_'));
+      const dbData : MetadataImage = {
+        fileName: fileName,
+        thumbUrl: snapshot.metadata.downloadURLs[0]
+      };
+      return dbRef.set(dbData).then( () => {
         console.log('Created new file ' + folder + fileName);
         return true;
       });
@@ -53,23 +63,20 @@ export function writeData(folder: string, fileName: string, data: any) : Promise
   });
 }
 
-export function getData(folderName: string) : Promise<string[]> {
-  let dbRef = firebase.database().ref().child(folderName);
-  return dbRef.once('value').then(function(snapshot) {
-    var imgs = snapshot.val();
-    return new Promise<string[]>( resolve => {
-      let imgsKeys = Object.keys(imgs);
-      let res: string[] = [];
-      imgsKeys.forEach(imgDBId => {
-        let storageRef = firebase.storage().ref();
-        let folderRef = storageRef.child(folderName + imgs[imgDBId].fileName);
-        folderRef.getMetadata().then( r => {
-          res.push(r.downloadURLs[0]);
-          if(res.length===imgsKeys.length) {
-            resolve(res);
-          }
-        });
-      });
+// get metadata from fb storage
+/*
+    let storageRef = firebase.storage().ref();
+    let folderRef = storageRef.child(folderName + fileName);
+    folderRef.getMetadata().then( r => {
+      let url = r.downloadURLs[0];
     });
+
+ */
+
+export function getData(folderName: string) : Promise<MetadataImage[]> {
+  const dbRef = firebase.database().ref().child(folderName);
+  return dbRef.once('value').then(function(snapshot) {
+    const imgs = snapshot.val();
+    return Object.keys(imgs).map(imgKey => imgs[imgKey]);
   });
 }
