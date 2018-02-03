@@ -36,16 +36,40 @@ export function initFirebase() {
   });
 }*/
 
-export function writeData(fileName: string, data: any) : Promise<boolean> {
+export function writeData(folder: string, fileName: string, data: any) : Promise<boolean> {
   let storageRef = firebase.storage().ref();
-  let testRef = storageRef.child(fileName);
+  let testRef = storageRef.child(folder + fileName);
   return testRef.put(data).then((snapshot: firebase.storage.UploadTaskSnapshot) => {
     if (snapshot.state === 'success') {
-      console.log('Created new file ' + fileName);
-      return true;
+      let dbRef = firebase.database().ref().child(folder + fileName.replace('.', '_'));
+      return dbRef.set({fileName: fileName}).then( () => {
+        console.log('Created new file ' + folder + fileName);
+        return true;
+      });
     } else {
-      console.log('Failed to create file ' + fileName);
+      console.log('Failed to create file ' + folder + fileName);
       return false;
     }
+  });
+}
+
+export function getData(folderName: string) : Promise<string[]> {
+  let dbRef = firebase.database().ref().child(folderName);
+  return dbRef.once('value').then(function(snapshot) {
+    var imgs = snapshot.val();
+    return new Promise<string[]>( resolve => {
+      let imgsKeys = Object.keys(imgs);
+      let res: string[] = [];
+      imgsKeys.forEach(imgDBId => {
+        let storageRef = firebase.storage().ref();
+        let folderRef = storageRef.child(folderName + imgs[imgDBId].fileName);
+        folderRef.getMetadata().then( r => {
+          res.push(r.downloadURLs[0]);
+          if(res.length===imgsKeys.length) {
+            resolve(res);
+          }
+        });
+      });
+    });
   });
 }

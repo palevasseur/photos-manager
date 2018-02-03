@@ -2,7 +2,7 @@ import * as React from 'react';
 import './App.css';
 import {getImagesList, getImage} from './driveapi';
 import {Jimp} from './jimp';
-import {writeData} from './firebase';
+import {getData, writeData} from './firebase';
 //const lennaUrl = require('./images/oeuf.jpg'); // this.createThumbnail(lennaUrl).then(image => image.getBase64(Jimp.MIME_JPEG, (err, src) => displayImage(src)));
 //const IMAGE_URL = 'https://drive.google.com/uc?export=view&id='; // <img src={IMAGE_URL + img.id} height="200px"/>
 
@@ -17,39 +17,70 @@ type Image = {
   state: 'loading' | 'creating thumb' | 'thumb saved' | 'error'
 };
 
-type AppState = {
-  imagesList: Image[]
+type Thumb = {
+  url: string
 };
+
+type AppState = {
+  imagesList: Image[],
+  thumbsList: Thumb[]
+};
+
+// ImageList component
+class ImagesList extends React.Component<{imagesList: Image[]}> {
+  render() {
+    let key = 0;
+    return this.props.imagesList.map((img: Image) => (
+      <div key={key++}>
+        {img.name + ' (' + img.size + ')' + ': ' + img.state}
+      </div>
+    ));
+  }
+}
+
+// ThumbList component
+class ThumbsList extends React.Component<{thumbsList: Thumb[]}> {
+  render() {
+    let key = 0;
+    return this.props.thumbsList.map((thumb: Thumb) => {
+      return <img key={key++} src={thumb.url} />;
+    });
+  }
+}
 
 class App extends React.Component {
   state: AppState = {
-    imagesList: []
+    imagesList: [],
+    thumbsList: []
   };
 
   constructor(props) {
     super(props);
 
     this.createThumbs = this.createThumbs.bind(this);
+    this.displayThumbs = this.displayThumbs.bind(this);
   }
 
   render() {
     return (
       <div className="App">
         <h2>Google Drive photos</h2>
-        <button onClick={this.createThumbs}>Create Thumbs</button><br/>
-        <div>{this.createList()}</div>
-        <div>{this.allThumbsDone() ? 'Creation thumbs terminated' : ''}</div>
+        <button onClick={this.createThumbs}>Create thumbs</button><br/>
+        <ImagesList imagesList={this.state.imagesList}/>
+        <div>
+          {this.allThumbsDone() ? <span>Thumbs creation terminated.</span> : <span/>}
+        </div>
+        <br/>
+        <button onClick={this.displayThumbs}>Display thumbs</button><br/>
+        <ThumbsList thumbsList={this.state.thumbsList}/>
       </div>
     );
   }
 
-  private createList() {
-    let key = 0;
-    return this.state.imagesList.map((img: Image) => (
-      <div key={key++}>
-        {img.name + ' (' + img.size + ')' + ': ' + img.state}
-      </div>
-    ));
+  private displayThumbs() {
+    getData(CLOUD_DEST_THUMBS_FOLDER).then( urls => {
+      this.setState({thumbsList: urls.map(url => { return {url: url}; })});
+    });
   }
 
   private allThumbsDone() {
@@ -92,7 +123,7 @@ class App extends React.Component {
                 if(err) {
                   this.setImageState(img, 'error');
                 } else {
-                  writeData(CLOUD_DEST_THUMBS_FOLDER + img.name, src)
+                  writeData(CLOUD_DEST_THUMBS_FOLDER, img.name, src)
                     .then(st => (this.setImageState(img, st ? 'thumb saved' : 'error')));
                 }
               });
