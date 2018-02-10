@@ -47,12 +47,28 @@ export function initFirebase() {
   });
 }*/
 
-export function writeImage(folder: string, fileName: string, data: any) : Promise<boolean> {
+function createFileName(folder: string, fileName: string): string {
+  return folder + fileName.replace('.', '_');
+}
+
+// dbRef: image db ref
+export function setBlurImage(dbRef: firebase.database.Reference, data: any) : Promise<boolean> {
+  const dbData : Image['blur'] = {
+      data: data
+  };
+  return dbRef.child('blur').set(dbData).then( () => {
+    console.log('Set blur image for ' + dbRef.key);
+    return true;
+  });
+}
+
+// return db ref of the new created image
+export function writeImage(folder: string, fileName: string, data: any) : Promise<firebase.database.Reference> {
   const storageRef = firebase.storage().ref();
   const testRef = storageRef.child(folder + fileName);
   return testRef.put(data).then((snapshot: firebase.storage.UploadTaskSnapshot) => {
     if (snapshot.state === 'success') {
-      const dbRef = firebase.database().ref().child(folder + fileName.replace('.', '_'));
+      const dbRef = firebase.database().ref().child(createFileName(folder, fileName));
       const dbData : Image = {
         fileName: fileName,
         thumb: {
@@ -60,12 +76,12 @@ export function writeImage(folder: string, fileName: string, data: any) : Promis
         }
       };
       return dbRef.set(dbData).then( () => {
-        console.log('Created new file ' + folder + fileName);
-        return true;
+        console.log('Created new image ' + folder + fileName);
+        return dbRef;
       });
     } else {
       console.log('Failed to create file ' + folder + fileName);
-      return false;
+      return null;
     }
   });
 }
